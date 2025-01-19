@@ -1,3 +1,5 @@
+#little improvements from the original version, now it runs faster, and finish the script with no errors
+
 ascii_art = """
 =======================================================================
 *     *       *          *     *       *          *     *       *
@@ -15,7 +17,7 @@ ascii_art = """
                                                                              
 
 
-        *         Made By Fear.io | V 1.0.0
+        *         Made By Fear.io | V 1.0.1
              *       *           *     *       *          *     *
   *        *       *          *     *       *
              *       *           *     *       *          *  *  *
@@ -28,12 +30,9 @@ ascii_art = """
 print(ascii_art)
 
 
-
 import requests
-import threading
 from urllib.parse import urljoin, urlparse, urlencode
 from bs4 import BeautifulSoup
-import random
 
 # Custom codes
 VULN_FOUND = 999
@@ -98,10 +97,13 @@ def test_sql_injection(url, params):
         for payload in SQL_PAYLOADS:
             test_params = params.copy()
             test_params[param] = payload
-            response = requests.get(url, params=test_params)
-            if "syntax error" in response.text or "mysql" in response.text.lower() or "SQL" in response.text:
-                print(f"[SQL Injection] Vulnerable parameter: {param} | Payload: {payload}")
-                return VULN_FOUND
+            try:
+                response = requests.get(url, params=test_params)
+                if "syntax error" in response.text.lower() or "mysql" in response.text.lower() or "SQL" in response.text:
+                    print(f"[SQL Injection] Vulnerable parameter: {param} | Payload: {payload}")
+                    return VULN_FOUND
+            except Exception as e:
+                print(f"Error occurred during SQL Injection testing: {e}")
     return None
 
 # Function to perform XSS testing
@@ -111,10 +113,13 @@ def test_xss(url, params):
         for payload in XSS_PAYLOADS:
             test_params = params.copy()
             test_params[param] = payload
-            response = requests.get(url, params=test_params)
-            if payload in response.text:
-                print(f"[XSS] Vulnerable parameter: {param} | Payload: {payload}")
-                return VULN_FOUND
+            try:
+                response = requests.get(url, params=test_params)
+                if payload in response.text:
+                    print(f"[XSS] Vulnerable parameter: {param} | Payload: {payload}")
+                    return VULN_FOUND
+            except Exception as e:
+                print(f"Error occurred during XSS testing: {e}")
     return None
 
 # Function to perform LFI testing
@@ -124,12 +129,12 @@ def test_lfi(url, params):
         for payload in LFI_PAYLOADS:
             test_params = params.copy()
             test_params[param] = payload
-            response = requests.get(url, params=test_params)
-            if "root:" in response.text or "[extensions]" in response.text:
-                print(f"[LFI] Vulnerable parameter: {param} | Payload: {payload}")
-                return VULN_FOUND
-    return None
-
+            try:
+                response = requests.get(url, params=test_params)
+                if "root:" in response.text:
+                    print("Local File Inclusion (LFI) vulnerability found!")
+            except Exception as e:
+                print(f"An error occurred: {e}")
 # Function to perform RFI testing
 def test_rfi(url, params):
     print("Testing for RFI...")
